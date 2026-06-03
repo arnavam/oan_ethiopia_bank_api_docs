@@ -1,0 +1,992 @@
+{
+	"info": {
+		"_postman_id": "1c02fd95-d2bc-4ec8-b64b-b3a9c7ee75da",
+		"name": "OAN Access to Credit (A2C)",
+		"description": "API Contracts for the OpenAgriNet Access to Credit DPG Module. Endpoints are divided into stateless interactive APIs and background system webhooks.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication & IAM",
+			"item": [
+				{
+					"name": "1. Login (Generate JWT)",
+					"id": "d1057b1d-c39d-4029-90d4-223970993daf",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"usr\": \"test_agent@coopbank.com\",\n    \"pwd\": \"test_agent@1234\"\n}"
+						},
+						"url": "{{base_url}}/api/method/oan_a2c.api.auth.login",
+						"description": "Authenticates the user using standard Frappe credentials and returns a short-lived JSON Web Token (JWT) intended for frontend stateless session management."
+					},
+					"response": []
+				},
+				{
+					"name": "2. Forgot Password Request",
+					"id": "1e50fd0e-2f1f-4644-9ac8-3a1f7b737e1c",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"agent.ethiopia@coopbank.com\"\n}"
+						},
+						"url": "{{base_url}}/api/method/oan_a2c.api.auth.forgot_password",
+						"description": "Triggers an email to the user with a reset password link containing a temporary cryptographic key."
+					},
+					"response": []
+				},
+				{
+					"name": "3. Reset Password (Bridge)",
+					"id": "6ff7f913-a941-4e7b-a32d-a137fbc104d9",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"agent.ethiopia@coopbank.com\",\n    \"key\": \"{{reset_key_from_email}}\",\n    \"new_password\": \"NewSuperSecurePassword987!\"\n}"
+						},
+						"url": "{{base_url}}/api/method/oan_a2c.api.auth.reset_password",
+						"description": "Sets a new password using the temporary key. Expected to be called by the Headless Frontend after a user clicks the reset link in their email."
+					},
+					"response": []
+				}
+			],
+			"id": "5ed3b9fa-c4b0-4043-b0dc-a291dc53b253"
+		},
+		{
+			"name": "Business API (Requires JWT)",
+			"item": [
+				{
+					"name": "1. Get Leads (Paginated Search & Filter)",
+					"id": "698b7f35-d722-4620-ada9-6ca09f99e952",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"description": "Insert the token received from the Login API.",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/method/oan_a2c.api.v1.leads.get_leads?start=0&page_length=20&search_query=&status=&lead_source=&start_date=&end_date=",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"method",
+								"oan_a2c.api.v1.leads.get_leads"
+							],
+							"query": [
+								{
+									"key": "start",
+									"value": "0"
+								},
+								{
+									"key": "page_length",
+									"value": "20"
+								},
+								{
+									"key": "search_query",
+									"value": ""
+								},
+								{
+									"key": "status",
+									"value": ""
+								},
+								{
+									"key": "lead_source",
+									"value": ""
+								},
+								{
+									"key": "start_date",
+									"value": ""
+								},
+								{
+									"key": "end_date",
+									"value": ""
+								}
+							]
+						},
+						"description": "Fetches a paginated, filtered, and searchable list of A2C leads. Automatically applies multi-tenant RBAC and User Permissions at the query layer."
+					},
+					"response": []
+				},
+				{
+					"name": "2. Create Lead Natively",
+					"id": "430c2230-c893-4331-a58f-3a71c6ea3320",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"phone_number\": \"+251911000009\",\n    \"first_name\": \"Radha\",\n    \"last_name\": \"Bikila\",\n    \"email\": \"abebe@coopbank.com\",\n    \"lead_source\": \"Agent Entry\",\n    \"external_id\": \"PARTNER-990012\"\n}"
+						},
+						"url": "{{base_url}}/api/method/oan_a2c.api.v1.leads.create_lead",
+						"description": "Natively registers a new A2C Lead document in the system using JWT field agent context."
+					},
+					"response": []
+				},
+				{
+					"name": "3. Get Lead Summary (Metrics Dashboard)",
+					"id": "3ec60447-9614-4f75-a8cd-d632a35723b0",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": "{{base_url}}/api/method/oan_a2c.api.v1.leads.get_lead_summary",
+						"description": "Returns aggregated lead counts: total count and status-wise counts. Enforces JWT session validation and native role-based permissions (RBAC)."
+					},
+					"response": []
+				}
+			],
+			"id": "91c18e0f-3e9e-45d3-b05b-403685521de3"
+		},
+		{
+			"name": "System Webhooks (Requires API Key/Secret)",
+			"item": [
+				{
+					"name": "Inbound Telco Webhook (Idempotent Ingestion)",
+					"id": "76e81208-8f0f-4932-ab09-f8f68b9e932d",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "token {{api_key}}:{{api_secret}}",
+								"description": "Standard Frappe API Key and API Secret token.",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"phone_number\": \"+251911000003\",\n    \"lead_source\": \"Missed Call\",\n    \"external_ref_id\": \"TELCO-778899\",\n    \"timestamp\": \"2026-05-26T12:00:00Z\"\n}"
+						},
+						"url": "{{base_url}}/api/method/oan_a2c.api.v1.webhooks.lead_inbound",
+						"description": "Automated ingestion callback for external telecommunication IVR / missed call nodes. Bypasses JWT gateway and authenticates system-to-system via API Token."
+					},
+					"response": []
+				}
+			],
+			"id": "651df0ac-819e-4156-b5e9-607b8a33c4c9"
+		},
+		{
+			"name": "Consent Management (Requires JWT)",
+			"item": [
+				{
+					"name": "1. Create Consent Request",
+					"id": "b0742bf2-52bd-4db4-858c-2e8bf324af20",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"fayda_id\": \"FAYDA-123\",\n    \"partner\": \"Test Partner\",\n    \"consent_type\": \"specific\",\n    \"purpose\": \"Testing Consent API\",\n    \"validity_from\": \"2026-06-01 00:00:00\",\n    \"validity_to\": \"2027-06-01 00:00:00\",\n    \"requested_data_fields\": []\n}"
+						},
+						"url": "{{base_url}}/api/method/oan_a2c.consent.consent.send_otp_and_create_consent"
+					},
+					"response": []
+				},
+				{
+					"name": "2. Send OTP",
+					"id": "a89dcebf-cc89-4e6d-9189-66a1993572e8",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"consent_request\": \"<CONSENT_REQUEST_ID_FROM_PREVIOUS_STEP>\"\n}"
+						},
+						"url": "{{base_url}}/api/method/oan_a2c.consent.consent.send_otp"
+					},
+					"response": []
+				},
+				{
+					"name": "3. Verify OTP",
+					"id": "377a144b-bf58-4fe1-aa89-9ac231075e15",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"consent_request\": \"<CONSENT_REQUEST_ID>\",\n    \"otp_code\": \"123456\"\n}"
+						},
+						"url": "{{base_url}}/api/method/oan_a2c.consent.consent.verify_otp"
+					},
+					"response": []
+				}
+			],
+			"id": "5b209d30-c0c5-4293-88dd-ab19796d586a"
+		},
+		{
+			"name": "Loan Application Management",
+			"item": [
+				{
+					"name": "1. Loan Details",
+					"id": "f0257b11-4ef3-44b3-abef-d60aab04bc68",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"action\": \"save\",\n    \"loan_type\": \"Agricultural Loan\",\n    \"purpose_of_loan\": \"Postman Test\",\n    \"requested_loan_amount\": 75000,\n    \"primary_crop\": \"Wheat\"\n}"
+						},
+						"url": "{{base_url}}/api/method/oan_a2c.api.loan_app_api.loan_details"
+					},
+					"response": []
+				},
+				{
+					"name": "2. Bank Details",
+					"id": "ba4ccec1-ffee-42d6-87f0-c5423c7744bc",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"action\": \"save\",\n    \"application_id\": \"{{application_id}}\",\n    \"bank_account_name\": \"Jane Doe\",\n    \"bank_account_number\": \"9876543210\",\n    \"bank_name\": \"Cooperative Bank of Oromia\",\n    \"total_amount_borrowing\": 75000\n}"
+						},
+						"url": "{{base_url}}/api/method/oan_a2c.api.loan_app_api.bank_details"
+					},
+					"response": []
+				},
+				{
+					"name": "3. Supporting Documents - Upload",
+					"id": "e3c0ab9e-e9a1-493d-aa0f-2c7bc6576948",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "action",
+									"value": "upload",
+									"type": "text"
+								},
+								{
+									"key": "application_id",
+									"value": "{{application_id}}",
+									"type": "text"
+								},
+								{
+									"key": "document_type",
+									"value": "Identity Document",
+									"type": "text"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"value": null
+								}
+							]
+						},
+						"url": "{{base_url}}/api/method/oan_a2c.api.loan_app_api.supporting_documents"
+					},
+					"response": []
+				},
+				{
+					"name": "4. Supporting Documents - List",
+					"id": "5de932f8-9148-48ea-8f86-ccf6112f59e7",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"action\": \"list\",\n    \"application_id\": \"{{application_id}}\"\n}"
+						},
+						"url": "{{base_url}}/api/method/oan_a2c.api.loan_app_api.supporting_documents"
+					},
+					"response": []
+				},
+				{
+					"name": "5. Farmer Details",
+					"id": "68c8c2c8-be16-4e37-bd1a-554543db48ff",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"action\": \"save\",\n    \"application_id\": \"{{application_id}}\",\n    \"full_name\": \"John\",\n    \"last_name\": \"Doe\",\n    \"mobile_phone\": \"0911223344\",\n    \"gender\": \"Male\",\n    \"woreda\": \"Woreda A\",\n    \"kebele\": \"Kebele B\",\n    \"marital_status\": \"Married\"\n}"
+						},
+						"url": "{{base_url}}/api/method/oan_a2c.api.loan_app_api.farmer_details"
+					},
+					"response": []
+				},
+				{
+					"name": "6. Get Consent Data",
+					"id": "d7bec7aa-76d9-452b-89fe-2ebde0cbb919",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"application_id\": \"{{application_id}}\"\n}"
+						},
+						"url": "{{base_url}}/api/method/oan_a2c.api.loan_app_api.get_consent_data"
+					},
+					"response": []
+				},
+				{
+					"name": "7. Application Manager - Review",
+					"id": "a6dcd5d6-a59e-4866-ba8d-f0b5c1273e16",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"action\": \"review\",\n    \"application_id\": \"{{application_id}}\"\n}"
+						},
+						"url": "{{base_url}}/api/method/oan_a2c.api.loan_app_api.application_manager"
+					},
+					"response": []
+				},
+				{
+					"name": "8. Application Manager - Submit",
+					"id": "b3b20348-1758-41f7-a14a-4d45468ea6c1",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"action\": \"submit\",\n    \"application_id\": \"{{application_id}}\"\n}"
+						},
+						"url": "{{base_url}}/api/method/oan_a2c.api.loan_app_api.application_manager"
+					},
+					"response": []
+				},
+				{
+					"name": "9. Get Loan Applications",
+					"id": "d8aa1462-c9ad-43d4-9329-122fc3ecb675",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/method/oan_a2c.openagrinet_access_to_credit.doctype.loan_application.loan_application.get_loan_applications?name=APP-2026-00002",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"method",
+								"oan_a2c.openagrinet_access_to_credit.doctype.loan_application.loan_application.get_loan_applications"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "[\"Draft\", \"Approved\"]",
+									"disabled": true
+								},
+								{
+									"key": "loan_amount_min",
+									"value": "10000",
+									"disabled": true
+								},
+								{
+									"key": "loan_amount_max",
+									"value": "150000",
+									"disabled": true
+								},
+								{
+									"key": "loan_type",
+									"value": "Agricultural Loan",
+									"disabled": true
+								},
+								{
+									"key": "mobile_phone",
+									"value": "555",
+									"disabled": true
+								},
+								{
+									"key": "from_date",
+									"value": "2026-10-01",
+									"disabled": true
+								},
+								{
+									"key": "to_date",
+									"value": "2026-10-31",
+									"disabled": true
+								},
+								{
+									"key": "name",
+									"value": "APP-2026-00002",
+									"type": "text"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"id": "deef8827-4aff-42fc-ac25-3292c2a17818",
+							"name": "9. Get Loan Applications",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/method/oan_a2c.openagrinet_access_to_credit.doctype.loan_application.loan_application.get_loan_applications",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"method",
+										"oan_a2c.openagrinet_access_to_credit.doctype.loan_application.loan_application.get_loan_applications"
+									],
+									"query": [
+										{
+											"key": "status",
+											"value": "[\"Draft\", \"Approved\"]",
+											"disabled": true
+										},
+										{
+											"key": "loan_amount_min",
+											"value": "10000",
+											"disabled": true
+										},
+										{
+											"key": "loan_amount_max",
+											"value": "150000",
+											"disabled": true
+										},
+										{
+											"key": "loan_type",
+											"value": "Agricultural Loan",
+											"disabled": true
+										},
+										{
+											"key": "mobile_phone",
+											"value": "555",
+											"disabled": true
+										},
+										{
+											"key": "from_date",
+											"value": "2026-10-01",
+											"disabled": true
+										},
+										{
+											"key": "to_date",
+											"value": "2026-10-31",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Server",
+									"value": "Werkzeug/3.1.6 Python/3.14.2"
+								},
+								{
+									"key": "Date",
+									"value": "Fri, 29 May 2026 14:34:31 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "1212"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-store,no-cache,must-revalidate,max-age=0"
+								},
+								{
+									"key": "Set-Cookie",
+									"value": "sid=Guest; Expires=Fri, 05 Jun 2026 16:34:31 GMT; Max-Age=612000; HttpOnly; Path=/; SameSite=Lax"
+								},
+								{
+									"key": "Set-Cookie",
+									"value": "system_user=no; Path=/; SameSite=Lax"
+								},
+								{
+									"key": "Set-Cookie",
+									"value": "full_name=Guest; Path=/; SameSite=Lax"
+								},
+								{
+									"key": "Set-Cookie",
+									"value": "user_id=Guest; Path=/; SameSite=Lax"
+								},
+								{
+									"key": "Set-Cookie",
+									"value": "user_lang=en; Path=/; SameSite=Lax"
+								},
+								{
+									"key": "Connection",
+									"value": "close"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n    \"message\": {\n        \"status\": \"success\",\n        \"results\": [\n            {\n                \"name\": \"APP-2026-00004\",\n                \"application_id\": null,\n                \"farmer\": null,\n                \"full_name\": null,\n                \"last_name\": null,\n                \"status\": \"Draft\",\n                \"requested_amount\": 3,\n                \"loan_duration_months\": null,\n                \"primary_crop\": \"Wheat\",\n                \"loan_type\": \"machinery\",\n                \"submitted_at\": null,\n                \"creation\": \"2026-05-29 20:02:48.746204\"\n            },\n            {\n                \"name\": \"APP-2026-00003\",\n                \"application_id\": null,\n                \"farmer\": null,\n                \"full_name\": null,\n                \"last_name\": null,\n                \"status\": \"Draft\",\n                \"requested_amount\": 1,\n                \"loan_duration_months\": null,\n                \"primary_crop\": \"Wheat\",\n                \"loan_type\": \"input\",\n                \"submitted_at\": null,\n                \"creation\": \"2026-05-29 19:56:30.183191\"\n            },\n            {\n                \"name\": \"APP-2026-00002\",\n                \"application_id\": null,\n                \"farmer\": null,\n                \"full_name\": null,\n                \"last_name\": null,\n                \"status\": \"Draft\",\n                \"requested_amount\": 1,\n                \"loan_duration_months\": null,\n                \"primary_crop\": \"Wheat\",\n                \"loan_type\": \"input\",\n                \"submitted_at\": null,\n                \"creation\": \"2026-05-29 19:51:58.928183\"\n            },\n            {\n                \"name\": \"APP-2026-00001\",\n                \"application_id\": null,\n                \"farmer\": \"arnavjagadeesh12@gmail.com\",\n                \"full_name\": \"1\",\n                \"last_name\": null,\n                \"status\": \"Draft\",\n                \"requested_amount\": 1,\n                \"loan_duration_months\": \"1\",\n                \"primary_crop\": \"1\",\n                \"loan_type\": \"2\",\n                \"submitted_at\": \"2026-05-14 18:34:31\",\n                \"creation\": \"2026-05-29 18:35:25.273951\"\n            }\n        ],\n        \"pagination\": {\n            \"total\": 4,\n            \"page\": 1,\n            \"page_size\": 20,\n            \"total_pages\": 1\n        }\n    }\n}"
+						},
+						{
+							"id": "55a92f8b-7936-4d2a-ad5b-985b38abdfa0",
+							"name": "9. Get Loan Applications",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/method/oan_a2c.openagrinet_access_to_credit.doctype.loan_application.loan_application.get_loan_applications?name=APP-2026-00002",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"method",
+										"oan_a2c.openagrinet_access_to_credit.doctype.loan_application.loan_application.get_loan_applications"
+									],
+									"query": [
+										{
+											"key": "status",
+											"value": "[\"Draft\", \"Approved\"]",
+											"disabled": true
+										},
+										{
+											"key": "loan_amount_min",
+											"value": "10000",
+											"disabled": true
+										},
+										{
+											"key": "loan_amount_max",
+											"value": "150000",
+											"disabled": true
+										},
+										{
+											"key": "loan_type",
+											"value": "Agricultural Loan",
+											"disabled": true
+										},
+										{
+											"key": "mobile_phone",
+											"value": "555",
+											"disabled": true
+										},
+										{
+											"key": "from_date",
+											"value": "2026-10-01",
+											"disabled": true
+										},
+										{
+											"key": "to_date",
+											"value": "2026-10-31",
+											"disabled": true
+										},
+										{
+											"key": "name",
+											"value": "APP-2026-00002",
+											"type": "text"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Server",
+									"value": "Werkzeug/3.1.6 Python/3.14.2"
+								},
+								{
+									"key": "Date",
+									"value": "Fri, 29 May 2026 14:35:01 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "1212"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-store,no-cache,must-revalidate,max-age=0"
+								},
+								{
+									"key": "Set-Cookie",
+									"value": "sid=Guest; Expires=Fri, 05 Jun 2026 16:35:01 GMT; Max-Age=612000; HttpOnly; Path=/; SameSite=Lax"
+								},
+								{
+									"key": "Connection",
+									"value": "close"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n    \"message\": {\n        \"status\": \"success\",\n        \"results\": [\n            {\n                \"name\": \"APP-2026-00004\",\n                \"application_id\": null,\n                \"farmer\": null,\n                \"full_name\": null,\n                \"last_name\": null,\n                \"status\": \"Draft\",\n                \"requested_amount\": 3,\n                \"loan_duration_months\": null,\n                \"primary_crop\": \"Wheat\",\n                \"loan_type\": \"machinery\",\n                \"submitted_at\": null,\n                \"creation\": \"2026-05-29 20:02:48.746204\"\n            },\n            {\n                \"name\": \"APP-2026-00003\",\n                \"application_id\": null,\n                \"farmer\": null,\n                \"full_name\": null,\n                \"last_name\": null,\n                \"status\": \"Draft\",\n                \"requested_amount\": 1,\n                \"loan_duration_months\": null,\n                \"primary_crop\": \"Wheat\",\n                \"loan_type\": \"input\",\n                \"submitted_at\": null,\n                \"creation\": \"2026-05-29 19:56:30.183191\"\n            },\n            {\n                \"name\": \"APP-2026-00002\",\n                \"application_id\": null,\n                \"farmer\": null,\n                \"full_name\": null,\n                \"last_name\": null,\n                \"status\": \"Draft\",\n                \"requested_amount\": 1,\n                \"loan_duration_months\": null,\n                \"primary_crop\": \"Wheat\",\n                \"loan_type\": \"input\",\n                \"submitted_at\": null,\n                \"creation\": \"2026-05-29 19:51:58.928183\"\n            },\n            {\n                \"name\": \"APP-2026-00001\",\n                \"application_id\": null,\n                \"farmer\": \"arnavjagadeesh12@gmail.com\",\n                \"full_name\": \"1\",\n                \"last_name\": null,\n                \"status\": \"Draft\",\n                \"requested_amount\": 1,\n                \"loan_duration_months\": \"1\",\n                \"primary_crop\": \"1\",\n                \"loan_type\": \"2\",\n                \"submitted_at\": \"2026-05-14 18:34:31\",\n                \"creation\": \"2026-05-29 18:35:25.273951\"\n            }\n        ],\n        \"pagination\": {\n            \"total\": 4,\n            \"page\": 1,\n            \"page_size\": 20,\n            \"total_pages\": 1\n        }\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "10. Get Loan Summary",
+					"id": "c5ff5d3b-3bef-4d7b-ab63-46f375c7fcfd",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": "{{base_url}}/api/method/oan_a2c.openagrinet_access_to_credit.doctype.loan_application.loan_application.get_loan_summary"
+					},
+					"response": [
+						{
+							"id": "a9a06f4e-d1c9-4c9d-9406-b11617596889",
+							"name": "10. Get Loan Summary",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": "{{base_url}}/api/method/oan_a2c.openagrinet_access_to_credit.doctype.loan_application.loan_application.get_loan_summary"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Server",
+									"value": "Werkzeug/3.1.6 Python/3.14.2"
+								},
+								{
+									"key": "Date",
+									"value": "Fri, 29 May 2026 14:35:42 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "109"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-store,no-cache,must-revalidate,max-age=0"
+								},
+								{
+									"key": "Set-Cookie",
+									"value": "sid=Guest; Expires=Fri, 05 Jun 2026 16:35:42 GMT; Max-Age=612000; HttpOnly; Path=/; SameSite=Lax"
+								},
+								{
+									"key": "Connection",
+									"value": "close"
+								}
+							],
+							"cookie": [],
+							"responseTime": null,
+							"body": "{\n    \"message\": {\n        \"status\": \"success\",\n        \"total\": 4,\n        \"by_status\": {\n            \"Approved\": 0,\n            \"Under Review\": 0,\n            \"Rejected\": 0,\n            \"Draft\": 4\n        }\n    }\n}"
+						}
+					]
+				}
+			],
+			"id": "6651e8b8-205b-4b3e-a536-efba44fc6c67"
+		}
+	],
+	"auth": {
+		"type": "apikey",
+		"apikey": {}
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "d9bad4fc-93fc-4bc0-98b8-9ba36434309f",
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "b1cd06ff-e396-4db7-9e6a-4cdf2dff5f79",
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000"
+		},
+		{
+			"key": "jwt_token",
+			"value": "PASTE_YOUR_JWT_TOKEN_HERE"
+		},
+		{
+			"key": "api_key",
+			"value": "PASTE_YOUR_API_KEY_HERE"
+		},
+		{
+			"key": "api_secret",
+			"value": "PASTE_YOUR_API_SECRET_HERE"
+		},
+		{
+			"key": "reset_key_from_email",
+			"value": "PASTE_YOUR_KEY_HERE"
+		},
+		{
+			"key": "application_id",
+			"value": ""
+		}
+	]
+}
