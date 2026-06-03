@@ -11,6 +11,30 @@
 			"item": [
 				{
 					"name": "1. Login (Generate JWT)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "911a315c-b6f8-48b5-b8c5-793cf33de5a0",
+								"exec": [
+									"pm.test('Login HTTP 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const json = pm.response.json();",
+									"",
+									"",
+									"",
+									"if (json.message.token) {",
+									"    pm.collectionVariables.set('jwt_token', json.message.token);",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
 					"id": "d1057b1d-c39d-4029-90d4-223970993daf",
 					"protocolProfileBehavior": {
 						"disableBodyPruning": true
