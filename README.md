@@ -12,36 +12,39 @@ Documentation and tooling for **Open Agri Net (OAN)** registry bank-access APIs,
 
 ## Staging environment
 
-| Item | Value |
-|------|-------|
-| Registry | [http://registry.oanstaging.com](http://registry.oanstaging.com) |
-| Odoo database | `management` |
-| OTP webhook bucket | [http://a2c-webhook.s3-website.ap-south-1.amazonaws.com/](http://a2c-webhook.s3-website.ap-south-1.amazonaws.com/) |
-| Farmer data webhooks | [http://a2c-webhook.s3-website.ap-south-1.amazonaws.com/respone/](http://a2c-webhook.s3-website.ap-south-1.amazonaws.com/respone/) |
+| Item                 | Value                                                                                                                              |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Registry             | [https://farmer-profile.ati.gov.et](https://farmer-profile.ati.gov.et)                                                                 |
+| Odoo database        | Please contact the administrator                                                                                                                             |
+| Test credentials     | Please contact the administartor                                                                                                    |
+| OTP webhook folder   | Given the api is hitting production and connected to fayda, the OTP will be recieved on the mobile         |
+| Farmer data webhooks | The resposne will come to kafka and need to subscribed to be delivered to the required application |
 
 ## End-to-end flow
 
-An A2C partner uses these APIs to request farmer consent, verify identity via Fayda OTP, approve the consent, and receive shared farmer data through a WebSub webhook.
+An A2C partner uses these APIs to search for a farmer, verify identity via Fayda OTP, attach supporting documents, approve consent, and receive shared farmer data through a WebSub webhook.
 
 1. **Login** — authenticate and obtain an Odoo session cookie
-2. **Create consent** — create a pending consent request for a farmer
+2. **Search farmer** — look up farmer by registration ID
 3. **Request OTP** — trigger Fayda OTP delivery
-4. **Fetch OTP** — read the OTP from the public webhook bucket
-5. **Verify OTP** — confirm the farmer's identity
-6. **Approve consent** — approve the request; registry publishes farmer data
-7. **Fetch farmer data** — read the approved payload from the `respone/` webhook folder
+4. **Verify OTP** — Verify the OTO recieved from the Farmer
+5. **Fetch Consent Reasons** — Fetch the consent reasons from registry to be displayed in the UI, for initiating the consent request
+6. **Fetch Allowed Data Fields** — Fetch the allowed whitelisted fields provisioned for the patrner profile, only the whitlisted fields can be retrived from regsitry as part of consent
+7. **Submit Consent** — Submit the request to create the consent artefact, given tgis OTP drive, it will be auto approved and the requseted data will be shared to kafka, the initiatiating application needs to be susbcribe to kafka to retrieve the data.
 
-See the [detailed documentation](consent_management_postman_registry_a2c.md) for request/response examples, collection variables, and troubleshooting.
+See the [detailed documentation](consent_management_postman_registry_a2c.md) for request/response examples, collection variables, and troubleshooting and for a detailed workflow  look at [[workflow]]
 
 ## Quick start — Postman
 
 1. Import [`Consent Management.postman_collection.json`](Consent%20Management.postman_collection.json) into Postman.
-2. Review or adjust collection variables (`url`, `login`, `password`, `partner_id`, `farmer_db_id`, etc.).
-3. Run requests in order: `1. login` → `2. create consent` → `3. request otp` → webhook helpers → `4. verify otp` → `5. approve` → farmer webhook helpers.
+2. Review or adjust collection variables (`base_url`, `db`, `login`, `password`, `partner_id`, `farmer_query`, etc.).
+3. Run requests in order: `1. login` → `2. search farmer` → `3. request otp` → webhook helpers → `4. verify otp` → `upload attachment` → `5. create consent` → `6. approve` → farmer webhook helpers.
 
-The collection includes test scripts that auto-save `consent_id`, `transaction_id`, and `otp_code` between steps.
+The collection includes test scripts that auto-save `farmer_db_id`, `consent_id`, `transaction_id`, `otp_code`, and `attachment_id` between steps.
 
 ## Quick start — terminal
+
+If you are testing this against our staging env [https://registry.oanstaging.com](https://registry.oanstaging.com) you can use the bewlo code and script files for testing
 
 ```bash
 chmod +x test_consent_management_apis.sh
@@ -51,18 +54,19 @@ chmod +x test_consent_management_apis.sh
 Override defaults with environment variables:
 
 ```bash
-BASE_URL=http://registry.oanstaging.com \
-LOGIN=your@email.com \
-PASSWORD=yourpassword \
-PARTNER_ID=7 \
-FARMER_DB_ID=10 \
+BASE_URL=https://registry.oanstaging.com \
+DB=odoo \
+LOGIN=a2capp@test.com \
+PASSWORD=a2capp@test.com \
+PARTNER_ID=16 \
+FARMER_QUERY=1234567 \
 ./test_consent_management_apis.sh
 ```
 
 If OTP auto-detection from S3 fails, pass the code manually:
 
 ```bash
-OTP_CODE=123456 ./test_consent_management_apis.sh
+OTP_CODE=965332 TX_ID=C67AC60C2FF541BBB0150F0E425C4783 ./test_consent_management_apis.sh
 ```
 
 ## License
